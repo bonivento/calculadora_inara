@@ -1,0 +1,208 @@
+/* =====================================================================
+   app.css — componentes de la Calculadora Inara by Alma
+   Clases reutilizables (para todas las vistas):
+
+   .ci-label        Etiqueta de campo (Montserrat mayúsculas pequeña). Usar <label class="ci-label" for="..">.
+   .ci-input        Input / select / textarea. Para selects añade también .select-botanic.
+                    Estado inválido: aria-invalid="true". Ancho completo.
+   .ci-field        Contenedor vertical label + input (+ .ci-hint).
+   .ci-hint         Texto de ayuda pequeño bajo un campo.
+   .ci-btn          Botón base. Variantes: .ci-btn-primary (oliva), .ci-btn-ghost (borde dorado),
+                    .ci-btn-danger (rojo), .ci-btn-sm (compacto), .ci-btn-icon (cuadrado solo icono).
+   .ci-card         Tarjeta (fondo blanco, borde suave, sombra). .ci-card-flat sin sombra; .ci-card-title para su título.
+   .ci-chip         Etiqueta/píldora. Variantes: .ci-chip-ok, .ci-chip-warn, .ci-chip-error, .ci-chip-gold.
+   .ci-table        Tabla; envolver en .ci-table-wrap (scroll horizontal). Columnas numéricas: .num (alineadas a la derecha).
+   .ci-tabs/.ci-tab Pestañas superiores (usadas por el shell). .ci-seg / .ci-seg-btn: control segmentado (role=tablist o radiogroup),
+                    el activo lleva .is-active o aria-pressed/aria-selected="true".
+   .ci-dialog       <dialog> estilizado; dentro usar .ci-dialog-body y .ci-dialog-actions.
+   .ci-grid         Rejilla responsiva: 1 col móvil, 2 en sm, 3 en lg (.ci-grid-2 fuerza máx. 2).
+   .ci-row          Fila flex con gap y wrap; .ci-spacer empuja al extremo.
+   .ci-h1/.ci-h2    Títulos de vista y de sección (Playfair).
+   .ci-muted        Texto secundario.
+   .ci-bar / .ci-bar > i   Barra de proporción CSS (ancho vía style="width:NN%"); color con --bar.
+   .ci-alert        Aviso en línea. Variantes: .ci-alert-info, .ci-alert-aviso, .ci-alert-error.
+   .ci-empty        Estado vacío centrado.
+   .ci-toast        (solo shell) avisos emergentes.
+   .ci-sticky-bar   Barra fija inferior en móvil (para el precio sugerido); en md+ se vuelve estática.
+   .sr-only         (Tailwind) texto solo para lectores de pantalla.
+   Variables: --ci-olive, --ci-gold, --ci-line, --ci-bg, --ci-card, --ci-text, --ci-muted.
+   ===================================================================== */
+
+:root {
+  --ci-olive: #5d5e38;
+  --ci-olive-dark: #4a4b2c;
+  --ci-gold: #c3a66a;
+  --ci-gold-dark: #725b27;
+  --ci-line: #c9c7b9;
+  --ci-bg: #fafaee;
+  --ci-card: #ffffff;
+  --ci-text: #1a1c15;
+  --ci-muted: #48473d;
+  --ci-error: #ba1a1a;
+  --ci-ok: #3f6b3a;
+  --ci-warn: #8a6100;
+}
+
+/* Vistas */
+.ci-view[hidden] { display: none !important; }
+.ci-h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 28px; line-height: 36px; color: var(--ci-text); margin: 0 0 .25rem; }
+.ci-h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; line-height: 30px; font-weight: 500; color: var(--ci-text); margin: 0 0 .75rem; }
+@media (min-width: 768px) { .ci-h1 { font-size: 34px; line-height: 44px; } }
+.ci-muted { color: var(--ci-muted); font-size: 13px; line-height: 20px; }
+
+/* Pestañas superiores */
+.ci-tabs { gap: .25rem; align-items: center; }
+.ci-tab {
+  display: inline-flex; align-items: center; gap: .4rem; padding: .55rem .9rem; border-radius: .5rem;
+  font-family: Montserrat, system-ui, sans-serif; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; font-weight: 500;
+  color: var(--ci-muted); text-decoration: none; transition: background-color .2s, color .2s;
+}
+.ci-tab .material-symbols-outlined { font-size: 18px; }
+.ci-tab:hover { background: #eeefe3; color: var(--ci-olive); }
+.ci-tab.is-active { background: var(--ci-olive); color: #fff; }
+
+/* Nav inferior móvil */
+.ci-bottomnav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; display: grid; grid-template-columns: repeat(4, 1fr);
+  background: rgba(250, 250, 238, .96); backdrop-filter: blur(12px); border-top: 1px solid var(--ci-line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.ci-bn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; padding: 6px 2px;
+  font-family: Montserrat, system-ui, sans-serif; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 500;
+  color: var(--ci-muted); text-decoration: none;
+}
+.ci-bn .material-symbols-outlined { font-size: 24px; }
+.ci-bn.is-active { color: var(--ci-olive); }
+.ci-bn.is-active .material-symbols-outlined { font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24; }
+.ci-bn.is-active span:last-child { font-weight: 600; }
+
+/* Campos */
+.ci-field { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+.ci-label { font-family: Montserrat, system-ui, sans-serif; font-size: 11px; line-height: 16px; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; color: var(--ci-muted); }
+.ci-hint { font-size: 12px; line-height: 17px; color: var(--ci-muted); }
+.ci-input {
+  width: 100%; min-height: 44px; padding: .6rem .8rem; background: #fff; color: var(--ci-text);
+  border: 1px solid var(--ci-line); border-radius: .5rem; font: inherit; font-size: 15px;
+  transition: border-color .2s, box-shadow .2s;
+}
+textarea.ci-input { min-height: 88px; resize: vertical; }
+.ci-input::placeholder { color: #79776c; opacity: .8; }
+.ci-input:hover { border-color: #a9a79a; }
+.ci-input:focus { outline: none; border-color: var(--ci-olive); box-shadow: 0 0 0 3px rgba(195, 166, 106, .45); }
+.ci-input[aria-invalid="true"] { border-color: var(--ci-error); }
+.ci-input:disabled { background: #f4f4e9; color: #79776c; cursor: not-allowed; }
+
+/* Botones */
+.ci-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 44px; padding: .6rem 1.1rem;
+  border-radius: .5rem; border: 1px solid transparent; cursor: pointer; text-decoration: none;
+  font-family: Montserrat, system-ui, sans-serif; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; font-weight: 600;
+  transition: background-color .25s, color .25s, border-color .25s, box-shadow .25s; user-select: none;
+}
+.ci-btn .material-symbols-outlined { font-size: 18px; }
+.ci-btn:disabled, .ci-btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.ci-btn-primary { background: var(--ci-olive); color: #fff; box-shadow: 0 4px 18px -6px rgba(30, 32, 25, .25); }
+.ci-btn-primary:hover:not(:disabled) { background: var(--ci-gold-dark); }
+.ci-btn-ghost { background: transparent; color: var(--ci-gold-dark); border-color: rgba(114, 91, 39, .35); }
+.ci-btn-ghost:hover:not(:disabled) { background: rgba(114, 91, 39, .09); }
+.ci-btn-danger, .ci-btn-primary.ci-btn-danger { background: var(--ci-error); color: #fff; border-color: transparent; }
+.ci-btn-ghost.ci-btn-danger { background: transparent; color: var(--ci-error); border-color: rgba(186, 26, 26, .4); }
+.ci-btn-danger:hover:not(:disabled) { filter: brightness(.9); }
+.ci-btn-sm { min-height: 36px; padding: .35rem .75rem; font-size: 10px; }
+.ci-btn-icon { min-width: 44px; padding: .5rem; }
+.ci-btn-sm.ci-btn-icon { min-width: 36px; }
+
+/* Tarjetas, chips */
+.ci-card { background: var(--ci-card); border: 1px solid rgba(201, 199, 185, .6); border-radius: .5rem; box-shadow: 0 4px 18px -6px rgba(30, 32, 25, .10); padding: 1rem; }
+@media (min-width: 768px) { .ci-card { padding: 1.5rem; } }
+.ci-card-flat { box-shadow: none; }
+.ci-card-title { font-family: 'Playfair Display', Georgia, serif; font-size: 20px; line-height: 28px; font-weight: 500; margin: 0 0 .75rem; }
+.ci-chip {
+  display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .6rem; border-radius: 9999px; background: #eeefe3; color: var(--ci-muted);
+  font-family: Montserrat, system-ui, sans-serif; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; white-space: nowrap;
+}
+.ci-chip-ok { background: #dfeedb; color: var(--ci-ok); }
+.ci-chip-warn { background: #fcecc4; color: var(--ci-warn); }
+.ci-chip-error { background: #fbdcdc; color: var(--ci-error); }
+.ci-chip-gold { background: #fcdc9b; color: #5a4617; }
+
+/* Control segmentado */
+.ci-seg { display: inline-flex; padding: 3px; gap: 2px; background: #eeefe3; border-radius: .5rem; }
+.ci-seg-btn {
+  min-height: 38px; padding: .4rem .9rem; border: 0; border-radius: .35rem; background: transparent; cursor: pointer; color: var(--ci-muted);
+  font-family: Montserrat, system-ui, sans-serif; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600;
+}
+.ci-seg-btn.is-active, .ci-seg-btn[aria-pressed="true"], .ci-seg-btn[aria-selected="true"] { background: #fff; color: var(--ci-olive); box-shadow: 0 1px 6px rgba(30, 32, 25, .12); }
+
+/* Tablas */
+.ci-table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: .5rem; }
+.ci-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ci-table caption { text-align: left; padding: 0 0 .5rem; }
+.ci-table th {
+  text-align: left; padding: .6rem .75rem; border-bottom: 1px solid var(--ci-line); white-space: nowrap;
+  font-family: Montserrat, system-ui, sans-serif; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--ci-muted);
+}
+.ci-table td { padding: .65rem .75rem; border-bottom: 1px solid rgba(201, 199, 185, .5); vertical-align: middle; }
+.ci-table tbody tr:hover { background: #f4f4e9; }
+.ci-table .num, .ci-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Rejillas y filas */
+.ci-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .ci-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .ci-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ci-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ci-row { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.ci-spacer { margin-left: auto; }
+
+/* Barras de proporción */
+.ci-bar { --bar: var(--ci-olive); height: 8px; border-radius: 9999px; background: #eeefe3; overflow: hidden; }
+.ci-bar > i { display: block; height: 100%; width: 0; background: var(--bar); border-radius: inherit; transition: width .35s ease; }
+
+/* Avisos en línea y vacíos */
+.ci-alert { display: flex; gap: .6rem; align-items: flex-start; padding: .7rem .9rem; border-radius: .5rem; font-size: 14px; line-height: 20px; background: #f4f4e9; color: var(--ci-text); border-left: 3px solid var(--ci-gold); }
+.ci-alert-info { border-left-color: var(--ci-gold); }
+.ci-alert-aviso { background: #fdf3d6; border-left-color: #b8860b; }
+.ci-alert-error { background: #fbe4e4; border-left-color: var(--ci-error); }
+.ci-empty { text-align: center; padding: 2.5rem 1rem; color: var(--ci-muted); }
+
+/* Barra fija móvil */
+.ci-sticky-bar {
+  position: fixed; left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom)); z-index: 40; background: #fff; border-top: 1px solid var(--ci-line);
+  box-shadow: 0 -8px 24px -12px rgba(30, 32, 25, .25); padding: .6rem 1.25rem;
+}
+@media (min-width: 768px) { .ci-sticky-bar { position: static; box-shadow: none; border: 0; padding: 0; background: transparent; } }
+
+/* Diálogos */
+.ci-dialog {
+  border: 0; padding: 0; border-radius: .5rem; background: var(--ci-bg); color: var(--ci-text);
+  width: min(92vw, 30rem); max-height: 90vh; box-shadow: 0 18px 40px -16px rgba(30, 32, 25, .35);
+  margin: auto;
+}
+.ci-dialog::backdrop { background: rgba(26, 28, 21, .45); backdrop-filter: blur(3px); }
+.ci-dialog[open] { animation: ci-pop .2s ease-out; }
+.ci-dialog-body { display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem; }
+.ci-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .6rem; }
+@keyframes ci-pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* Toasts */
+.ci-toasts {
+  position: fixed; z-index: 90; left: 1rem; right: 1rem; bottom: calc(72px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: .5rem; align-items: center; pointer-events: none;
+}
+@media (min-width: 768px) { .ci-toasts { left: auto; right: 1.5rem; bottom: 1.5rem; align-items: flex-end; } }
+.ci-toast {
+  pointer-events: auto; display: flex; align-items: center; gap: .5rem; max-width: 28rem; padding: .7rem 1rem; border-radius: .5rem;
+  background: #2f312a; color: #f1f1e6; font-size: 14px; line-height: 20px; box-shadow: 0 18px 40px -16px rgba(30, 32, 25, .5);
+  animation: ci-pop .25s ease-out; transition: opacity .3s, transform .3s;
+}
+.ci-toast .material-symbols-outlined { font-size: 20px; color: var(--ci-gold); }
+.ci-toast-error { background: #7a1313; }
+.ci-toast-error .material-symbols-outlined { color: #ffd9d9; }
+.ci-toast.is-out { opacity: 0; transform: translateY(6px); }
+
+@media print {
+  .site-header, .ci-bottomnav, .ci-toasts, footer { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ci-dialog[open], .ci-toast { animation: none; }
+  .ci-bar > i { transition: none; }
+}

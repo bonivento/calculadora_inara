@@ -1,0 +1,14 @@
+{
+  "name": "Calculadora de precios — Inara by Alma",
+  "short_name": "Calculadora",
+  "description": "Costos y precios de velas y jabones artesanales",
+  "lang": "es-CO",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#fafaee",
+  "theme_color": "#fafaee",
+  "icons": [
+    { "src": "assets/brand/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "assets/brand/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

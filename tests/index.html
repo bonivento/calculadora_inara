@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tests del motor de cálculo</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #fafaee; color: #1b1c15; margin: 0; padding: 16px; max-width: 800px; margin-inline: auto; }
+  h1 { font-size: 1.25rem; }
+  #resumen { padding: 10px 14px; border-radius: 8px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+  #resumen.ok { background: #2e7d32; } #resumen.fail { background: #c62828; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li { padding: 6px 10px; border-left: 4px solid; margin-bottom: 4px; background: #fff; font-size: .9rem; }
+  li.pass { border-color: #2e7d32; } li.fail { border-color: #c62828; background: #fdecea; }
+  li small { display: block; color: #555; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Motor de cálculo: pruebas</h1>
+<div id="resumen">Ejecutando…</div>
+<ul id="lista"></ul>
+<script src="../assets/js/calc.js"></script>
+<script src="calc.tests.js"></script>
+</body>
+</html>
