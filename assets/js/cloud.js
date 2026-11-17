@@ -22,6 +22,7 @@
       ok: ['ci-chip ci-chip-ok', 'cloud_done', 'Sincronizado'],
       saving: ['ci-chip ci-chip-gold', 'sync', 'Guardando…'],
       error: ['ci-chip ci-chip-warn', 'cloud_off', 'Sin conexión · reintentando'],
+      ro: ['ci-chip ci-chip-gold', 'visibility', 'Solo lectura'],
       local: ['ci-chip', 'cloud_off', 'Solo en este equipo']
     };
     var m = map[kind] || map.local;
@@ -169,6 +170,36 @@
     store()._raw.set(TEAM_KEY, teamId);
   }
 
+  /* ---------- rol de la sesión ---------- */
+  function applyRole() {
+    if (rol === 'lector') {
+      // Solo lectura: nada se sube; cualquier edición local se revierte con los datos del equipo.
+      store()._setSyncHook(function () {
+        clearTimeout(revertTimer);
+        revertTimer = setTimeout(function () {
+          CI.util.toast('Tu rol es de solo lectura: los cambios no se guardan.', 'error');
+          pull().catch(function () {});
+        }, 300);
+      });
+      setStatus('ro');
+    } else {
+      store()._setSyncHook(function () { schedulePush(); });
+      if (rol) setStatus('ok');
+    }
+  }
+  var revertTimer = null;
+
+  async function refreshRole() {
+    try {
+      var m = await sb.from('miembros').select('rol,activo').eq('equipo_id', teamId).eq('user_id', me.id).maybeSingle();
+      if (!m.data || !m.data.activo) { showBlocked('Tu acceso al equipo fue retirado.'); return; }
+      rol = m.data.rol;
+      await pull();
+      applyRole();
+      if (rol === 'lector') CI.util.toast('Tu rol cambió a solo lectura.', 'error');
+    } catch (e) { setStatus('error'); }
+  }
+
   function schedulePush(delay) {
     if (!teamId) return;
     clearTimeout(timer);
@@ -211,6 +242,12 @@
       setStatus('ok');
     } catch (e) {
       if (window.console) console.error('Sincronización:', e);
+      if (e && (e.code === '42501' || /row-level security|permission denied/i.test(e.message || ''))) {
+        // Cambió tu rol o te desactivaron: revisa y vuelve a los datos del equipo.
+        pushing = false;
+        await refreshRole();
+        return;
+      }
       setStatus('error');
       clearTimeout(retryTimer);
       retryTimer = setTimeout(pushNow, 15000);
@@ -270,83 +307,8 @@
     setStatus(teamId ? 'ok' : 'local');
   }
 
-  async function openTeam() {
-    var dlg = $('#ci-team');
-    if (!dlg) {
-      dlg = document.createElement('dialog');
-      dlg.id = 'ci-team'; dlg.className = 'ci-dialog';
-      dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
-      document.body.appendChild(dlg);
-    }
-    dlg.innerHTML = '<div class="ci-dialog-body"><p class="ci-muted">Cargando equipo…</p></div>';
-    if (!dlg.open) dlg.showModal();
-    try {
-      var r = await Promise.all([
-        sb.from('miembros').select('user_id,email,rol').eq('equipo_id', teamId).order('created_at'),
-        sb.from('invitaciones').select('email,rol').eq('equipo_id', teamId)
-      ]);
-      if (r[0].error) throw r[0].error;
-      var miembros = r[0].data || [], inv = (r[1].data || []);
-      var admin = rol === 'admin';
-      var h = '<div class="ci-dialog-body"><h2 class="font-headline text-headline-sm">Equipo</h2>' +
-        '<p class="ci-muted">Sesión: <strong>' + esc(me.email) + '</strong> · ' + esc(rol) + '</p>' +
-        '<h3 class="ci-label" style="margin-top:1rem">Miembros</h3><ul style="list-style:none;padding:0;margin:0">';
-      miembros.forEach(function (m) {
-        h += '<li class="ci-row" style="justify-content:space-between;padding:.35rem 0;border-bottom:1px solid #c9c7b9"><span>' + esc(m.email) +
-          ' <span class="ci-chip">' + esc(m.rol) + '</span></span>' +
-          (admin && m.user_id !== me.id ? '<button type="button" class="ci-btn ci-btn-ghost ci-btn-sm" data-quitar="' + esc(m.user_id) + '">Quitar</button>' : '') + '</li>';
-      });
-      h += '</ul>';
-      if (admin) {
-        h += '<h3 class="ci-label" style="margin-top:1rem">Invitaciones pendientes</h3>';
-        h += inv.length ? '<ul style="list-style:none;padding:0;margin:0">' + inv.map(function (i) {
-          return '<li class="ci-row" style="justify-content:space-between;padding:.35rem 0"><span>' + esc(i.email) + ' <span class="ci-chip">' + esc(i.rol) + '</span></span>' +
-            '<button type="button" class="ci-btn ci-btn-ghost ci-btn-sm" data-borrar-inv="' + esc(i.email) + '">Cancelar</button></li>';
-        }).join('') + '</ul>' : '<p class="ci-hint">Ninguna.</p>';
-        h += '<form id="ci-inv-form" class="ci-row" style="margin-top:.75rem;gap:.5rem;flex-wrap:wrap">' +
-          '<input class="ci-input" id="ci-inv-mail" type="email" placeholder="correo@ejemplo.com" required style="flex:1;min-width:12rem" aria-label="Correo a invitar">' +
-          '<select class="ci-input select-botanic" id="ci-inv-rol" aria-label="Rol" style="width:auto"><option value="miembro">Miembro</option><option value="admin">Admin</option></select>' +
-          '<button class="ci-btn ci-btn-primary ci-btn-sm" type="submit">Invitar</button></form>' +
-          '<p class="ci-hint">La persona debe crear su cuenta con ese mismo correo; al entrar se une al equipo.</p>';
-      }
-      h += '<h3 class="ci-label" style="margin-top:1rem">Mi contraseña</h3>' +
-        '<form id="ci-pw-form" class="ci-row" style="gap:.5rem"><input class="ci-input" id="ci-pw" type="password" minlength="6" placeholder="Nueva contraseña" autocomplete="new-password" style="flex:1" aria-label="Nueva contraseña">' +
-        '<button class="ci-btn ci-btn-ghost ci-btn-sm" type="submit">Cambiar</button></form>' +
-        '<div class="ci-dialog-actions"><button type="button" class="ci-btn ci-btn-ghost" id="ci-out">Cerrar sesión</button>' +
-        '<button type="button" class="ci-btn ci-btn-primary" id="ci-team-close">Listo</button></div></div>';
-      dlg.innerHTML = h;
-      $('#ci-team-close', dlg).addEventListener('click', function () { dlg.close(); });
-      $('#ci-out', dlg).addEventListener('click', signOut);
-      dlg.querySelectorAll('[data-quitar]').forEach(function (b) {
-        b.addEventListener('click', async function () {
-          if (!(await CI.util.confirmDialog('¿Quitar a esta persona del equipo?'))) return;
-          var e = (await sb.from('miembros').delete().eq('equipo_id', teamId).eq('user_id', b.getAttribute('data-quitar'))).error;
-          if (e) CI.util.toast(msgError(e), 'error'); else openTeam();
-        });
-      });
-      dlg.querySelectorAll('[data-borrar-inv]').forEach(function (b) {
-        b.addEventListener('click', async function () {
-          var e = (await sb.from('invitaciones').delete().eq('equipo_id', teamId).eq('email', b.getAttribute('data-borrar-inv'))).error;
-          if (e) CI.util.toast(msgError(e), 'error'); else openTeam();
-        });
-      });
-      var f = $('#ci-inv-form', dlg);
-      if (f) f.addEventListener('submit', async function (ev) {
-        ev.preventDefault();
-        var mail = $('#ci-inv-mail', dlg).value.trim().toLowerCase();
-        var e = (await sb.from('invitaciones').upsert({ equipo_id: teamId, email: mail, rol: $('#ci-inv-rol', dlg).value }, { onConflict: 'equipo_id,email' })).error;
-        if (e) CI.util.toast(msgError(e), 'error'); else { CI.util.toast('Invitación creada para ' + mail); openTeam(); }
-      });
-      $('#ci-pw-form', dlg).addEventListener('submit', async function (ev) {
-        ev.preventDefault();
-        var e = (await sb.auth.updateUser({ password: $('#ci-pw', dlg).value })).error;
-        if (e) CI.util.toast(msgError(e), 'error'); else { CI.util.toast('Contraseña actualizada'); $('#ci-pw', dlg).value = ''; }
-      });
-    } catch (e) {
-      dlg.innerHTML = '<div class="ci-dialog-body"><p class="ci-alert ci-alert-error">' + esc(msgError(e)) + '</p><div class="ci-dialog-actions"><button type="button" class="ci-btn ci-btn-primary" id="ci-team-close">Cerrar</button></div></div>';
-      $('#ci-team-close', dlg).addEventListener('click', function () { dlg.close(); });
-    }
-  }
+  function openTeam() { return CI.admin ? CI.admin.open(ctx()) : undefined; }
+  function ctx() { return { sb: sb, me: me, teamId: teamId, rol: rol, msgError: msgError, signOut: signOut }; }
 
   /* ---------- arranque ---------- */
   async function init() {
@@ -368,17 +330,21 @@
           showBlocked('Tu correo (' + me.email + ') aún no está invitado a ningún equipo. Pide a un administrador que te invite con este mismo correo y vuelve a entrar.');
           return new Promise(function () {}); // no arrancar la app
         }
+        if (/cuenta_desactivada/.test(eq.error.message || '')) {
+          showBlocked('Tu cuenta (' + me.email + ') fue desactivada por un administrador del equipo. Si crees que es un error, escríbele.');
+          return new Promise(function () {});
+        }
         throw eq.error;
       }
       teamId = eq.data;
       var m = await sb.from('miembros').select('rol').eq('equipo_id', teamId).eq('user_id', me.id).maybeSingle();
       rol = (m.data && m.data.rol) || 'miembro';
       await pull();
-      store()._setSyncHook(function () { schedulePush(); });
+      applyRole();
       hookOn = true;
       subscribe();
-      schedulePush(0);
-      window.addEventListener('online', function () { schedulePush(0); });
+      if (rol !== 'lector') schedulePush(0);
+      window.addEventListener('online', function () { if (rol !== 'lector') schedulePush(0); });
       sb.auth.onAuthStateChange(function (evt) { if (evt === 'SIGNED_OUT') { store()._wipeLocal(); location.href = location.pathname; } });
       // limpiar parámetros de autenticación de la URL
       if (/access_token|refresh_token|[?&]code=/.test(location.href)) history.replaceState(null, '', location.pathname + '#calculadora');
