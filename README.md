@@ -56,3 +56,9 @@ assets/js/*.js        defaults, store, calc, vistas
 assets/css/app.css    componentes (.ci-*)
 assets/brand/         logos e iconos
 ```
+
+## Base de datos y equipo (Supabase)
+- Ejecuta `supabase/schema.sql` una vez en Supabase → SQL Editor.
+- La URL y la clave pública están en `assets/js/config.js` (la clave pública es segura en el navegador gracias a RLS).
+- El primer usuario que entra crea el equipo y es admin; los demás deben ser invitados por correo desde el botón «Equipo».
+- Los cambios se sincronizan en vivo entre miembros; si no hay conexión se reintenta automáticamente.

@@ -59,7 +59,7 @@
   <footer class="border-t border-outline-variant/40 bg-surface-container-low pb-24 md:pb-0">
     <div class="max-w-[1440px] mx-auto px-margin-mobile md:px-8 xl:px-margin-desktop py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
       <img src="assets/brand/isotipo-oliva.png" alt="" class="h-6 w-auto" width="64" height="64" aria-hidden="true">
-      <p class="font-body text-body-sm text-on-surface-variant">Herramienta privada de Inara by Alma. Tus datos viven solo en este navegador: exporta una copia de seguridad desde Ajustes.</p>
+      <p class="font-body text-body-sm text-on-surface-variant">Herramienta privada de Inara by Alma. Los datos se guardan en la nube del equipo; en Ajustes puedes exportar una copia de seguridad.</p>
     </div>
   </footer>
 
@@ -97,9 +97,15 @@
   <script src="assets/js/ui-ajustes.js"></script>
   <script src="assets/js/ui-calculadora.js"></script>
   <script src="assets/js/ui-productos.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/cloud.js"></script>
   <script>
     (function () {
-      function go() { window.CI.app.start(); }
+      function go() {
+        var init = (window.CI.cloud && window.CI.cloud.init) ? window.CI.cloud.init() : Promise.resolve();
+        Promise.resolve(init).catch(function (e) { console.error(e); }).then(function () { window.CI.app.start(); });
+      }
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
       else go();
     })();

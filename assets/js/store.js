@@ -122,7 +122,9 @@
     var list = which ? [which] : ['insumos', 'recetas', 'settings'];
     list.forEach(function (k) { writeJSON(K[k], state[k]); });
     writeJSON(K.meta, { version: SCHEMA, seeded: true });
+    if (syncHook) { try { syncHook(which || null); } catch (e) { if (window.console) console.error(e); } }
   }
+  var syncHook = null;
 
   // Migración por versión: cada paso lleva de version v a v+1
   function migrate(data, from) {
@@ -365,6 +367,30 @@
       emit('insumos'); emit('recetas'); emit('settings');
       return { ok: true };
     },
+
+    /* ---- ganchos para la nube (CI.cloud) ---- */
+    _setSyncHook: function (fn) { syncHook = typeof fn === 'function' ? fn : null; },
+    // Reemplaza datos con los del servidor SIN disparar la subida. Parcial: solo las claves presentes.
+    _applyRemote: function (data) {
+      var s = load();
+      if (data.insumos) s.insumos = data.insumos.map(normInsumo).filter(function (x) { return x && x.id; });
+      if (data.recetas) s.recetas = data.recetas.map(normReceta).filter(function (x) { return x && x.id; });
+      if (data.settings) s.settings = normSettings(data.settings);
+      var hook = syncHook; syncHook = null;
+      try { persist(); } finally { syncHook = hook; }
+      if (data.insumos) emit('insumos');
+      if (data.recetas) emit('recetas');
+      if (data.settings) emit('settings');
+    },
+    // Borra todo rastro local (al cerrar sesión en un equipo compartido).
+    _wipeLocal: function () {
+      [K.insumos, K.recetas, K.settings, K.meta, 'ci.v1.team'].forEach(function (k) {
+        try { window.localStorage.removeItem(k); } catch (e) {}
+        delete mem[k];
+      });
+      state = null;
+    },
+    _raw: { get: rawGet, set: rawSet },
 
     on: function (fn) { if (typeof fn === 'function' && listeners.indexOf(fn) < 0) listeners.push(fn); },
     off: function (fn) { listeners = listeners.filter(function (f) { return f !== fn; }); }
